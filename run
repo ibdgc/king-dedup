@@ -15,14 +15,13 @@ function on_failure {
 trap on_failure ERR
 
 . ./setup/preamble
-echo $OUT_DIR
-
+INPUTS=$1 
 
 # Activate king-dedup environment
 conda activate king-dedup
 
 # Run main program and pipe output to log.txt file in output directory.
-./main $OUT_DIR 2>&1 | tee -a $OUT_DIR/log.txt
+./main $OUT_DIR $INPUTS 2>&1 | tee -a $OUT_DIR/log.txt
 
 # Remove temporary directory.
 rm -rf $OUT_DIR/tmp
