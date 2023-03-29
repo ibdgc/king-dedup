@@ -1,32 +1,32 @@
 #!/bin/bash
 
-eval "$(conda shell.bash hook)"
+# This script requires conda as dependency
+# maintainer: christopher.tastad@mssm.edu
 
-# Install packages if they aren't already installed
-declare -a TOOLS=(
-"king"
-"bcftools"
-"picard"
-"plink"
-)
+# Exit immediately if a command exits with a non-zero status
+set -euo pipefail
 
-# Check if conda is installed
-if ! command -v conda &> /dev/null
-then
-    echo "conda could not be found"
-    exit
-fi
+# Function that will be called if any command in the script fails
+function on_failure {
+    echo "The script" "${0##*/}" "has failed"
+}
 
-# Create environment if it doesn't exist
-if ! conda env list | grep -q "king-dedup"
-then
-    conda create --name king-dedup -y
-    conda activate king-dedup
-    for i in "${TOOLS[@]}"
-    do
-        conda install -y "$i"
-    done
-fi
+# Trap ERR signal and call on_failure function
+trap on_failure ERR
 
-# Deactivate environment
+. ./setup/preamble
+echo $OUT_DIR
+
+
+# Activate king-dedup environment
+conda activate king-dedup
+
+# Run main program and pipe output to log.txt file in output directory.
+./main $OUT_DIR 2>&1 | tee -a $OUT_DIR/log.txt
+
+# Remove temporary directory.
+rm -rf $OUT_DIR/tmp
+
+# Deactivate king-dedup environment.
 conda deactivate
+
