@@ -17,6 +17,7 @@ declare -a TOOLS=(
 "bcftools"
 "picard"
 "plink"
+"plink2"
 )
 
 # Check if conda is installed
