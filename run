@@ -15,7 +15,7 @@ function on_failure {
 trap on_failure ERR
 
 . ./setup/preamble
-INPUTS=$1 
+INPUTS=$1
 
 # Activate king-dedup environment
 conda activate king-dedup

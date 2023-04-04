@@ -1,1 +1,5 @@
 *.swp
+*.bed
+*.ped
+*.vcf
+output_*
