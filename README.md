@@ -1,6 +1,8 @@
 # king-dedup
 
 ## Dependencies
+- snpflip for alignment to positive strand (https://github.com/biocore-ntnu/snpflip)
+    - requires .bim file for each dataset and .fasta file for reference genome matching each input file
 - Package management is handled by [conda](https://docs.conda.io/en/latest/miniconda.html).
 - Tools installed during setup
     - `bcftools`
@@ -8,6 +10,7 @@
     - `plink`
     - `plink2`
     - `king`
+
 
 ## Setup
 
