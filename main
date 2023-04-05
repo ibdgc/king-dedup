@@ -66,6 +66,16 @@ find "$OUT_DIR" -name "*.ped" |
     done
 
 # unifying variant IDs
+#align each bim file to positive strand of reference genome prior to merging
+python snptest.py -b <plinkFileName>.bim -rgf <referenceGenome>.fa -op <outputFilesPrefix>
+
+cat <outputFilesPrefix>.ambiguous <outputFilesPrefix>.bad > <outputFilesPrefix>.remove
+
+#Remove ambiguous SNPs and flip to positive strand
+../plink --bfile <plinkFileName> --exclude <outputFilesPrefix>.remove --make-bed --out <tempPlinkFiles>
+../plink --bfile <tempPlinkFiles> --flip <outputFilesPrefix>.reverse --make-bed --out <finalPlinkFiles>
+
+
 #ls *.bim |
 find "$OUT_DIR" -name "*.bim" |
     while read -r line
