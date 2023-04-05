@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# TODO setup ifthen for liftover depdend on ref genome build
+
 OUT_DIR=$1
 readarray INPUTS < "$2"
 
@@ -87,7 +89,8 @@ find "$OUT_DIR" -name "*.bim" |
             --update-map update.ids \
             --update-name \
             --make-bed \
-            --out "$NAME"-newID
+            --out "$NAME"-newID \
+            --new-id-max-allele-len 100??
     done
 
 # merging gsa
