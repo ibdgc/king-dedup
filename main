@@ -1,15 +1,32 @@
 #!/bin/bash
 
 OUT_DIR=$1
-readarray INPUTS < "$2"
+INPUT=./setup/samples.csv
+
+# Define two arrays to store input values
+declare -a FILES
+declare -a REFERENCE
+
+# Read sample input file by line and split into vars
+while IFS=, read -r var1 var2
+do
+  FILES+=("$var1")
+  REFERENCE+=("$var2")
+done < "$INPUT"
+
+# # Example loop with array input
+# for i in "${!FILES[@]}"
+# do
+#   echo "Pair $i: ${FILES[$i]} and ${REFERENCE[$i]}"
+# done
 
 j=0
 
-for i in "${INPUTS[@]}"
+for i in "${FILES[@]}"
 do
     # splitting
     bcftools norm \
-        -m - "$i" \
+        -m - "${FILES[$i]}" \
         --threads 10 \
         -Oz \
         -o "$OUT_DIR"/tmp/tmp1.vcf.gz
