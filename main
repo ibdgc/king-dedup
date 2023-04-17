@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# TODO setup ifthen for liftover depdend on ref genome build
+
 OUT_DIR=$1
 INPUT=./setup/samples.csv
 
@@ -68,6 +70,7 @@ plink \
     --const-fid \
     --make-bed \
     --out "$OUT_DIR"/all-niddk-wes-wgs
+    --keep-allele-order                     ##to keep reference allele as a2
 
 # converting GSA files to plink binary format
 #find ./Plink_Files/ -name "*.ped" |
@@ -83,6 +86,16 @@ find "$OUT_DIR" -name "*.ped" |
     done
 
 # unifying variant IDs
+#align each bim file to positive strand of reference genome prior to merging
+python snptest.py -b <plinkFileName>.bim -rgf <referenceGenome>.fa -op <outputFilesPrefix>
+
+cat <outputFilesPrefix>.ambiguous <outputFilesPrefix>.bad > <outputFilesPrefix>.remove
+
+#Remove ambiguous SNPs and flip to positive strand
+../plink --bfile <plinkFileName> --exclude <outputFilesPrefix>.remove --make-bed --out <tempPlinkFiles>
+../plink --bfile <tempPlinkFiles> --flip <outputFilesPrefix>.reverse --make-bed --out <finalPlinkFiles>
+
+
 #ls *.bim |
 find "$OUT_DIR" -name "*.bim" |
     while read -r line
@@ -94,7 +107,8 @@ find "$OUT_DIR" -name "*.bim" |
             --update-map update.ids \
             --update-name \
             --make-bed \
-            --out "$NAME"-newID
+            --out "$NAME"-newID \
+            ##no need to add id length parameter when updating ids from a file. It is only required if IDs are set using --set-missing-var-ids.
     done
 
 # merging gsa
@@ -130,53 +144,59 @@ plink \
     --bfile "$OUT_DIR"/merged-gsa-a2fill-clean \
     --recode vcf bgz \
     --output-chr chr26 \
-    --out "$OUT_DIR"/all-gsa-clean
+    --out "$OUT_DIR"/all-gsa-chr1-23.vcf.gz
+    --chr 1-22,X ##select chr1-23
 
-bcftools view \
-    -r chr1,chr2,chr3,chr4,chr5,chr6,chr7,chr8,chr9,chr10,chr11,chr12,chr13,chr14,chr15,chr16,chr17,chr18,chr19,chr20,chr21,chr22,chr23 "$OUT_DIR"/all-gsa-clean/all-gsa-clean.vcf.gz \
-    -Oz \
-    -o "$OUT_DIR"/all-gsa-chr1-23.vcf.gz
+
+##no need to do this step (Added this parameter in the previous step).
+#bcftools view \
+ #   -r chr1,chr2,chr3,chr4,chr5,chr6,chr7,chr8,chr9,chr10,chr11,chr12,chr13,chr14,chr15,chr16,chr17,chr18,chr19,chr20,chr21,chr22,chr23 "$OUT_DIR"/all-gsa-clean/all-gsa-clean.vcf.gz \
+ #   -Oz \
+ #   -o "$OUT_DIR"/all-gsa-chr1-23.vcf.gz
 
 picard \
     -LiftoverVcf \
     I="$OUT_DIR"/all-gsa-chr1-23.vcf.gz \
     O="$OUT_DIR"/all-gsa-hg38.vcf.gz \
     CHAIN=../../../reference/hg19ToHg38.over.chain \
-    REJECT=rejec.vcf.gz \
-    R=../../../reference/hg38.fa                                              # first round liftover to get rejected site due to strands flipped
+    REJECT=reject.vcf.gz \
+    R=../../../reference/hg38.fa                                              # first round liftover to get rejected site due to strands flipped ## why there are still strand flips, they should have been corrected in lines #73-79 
+    RECOVER_SWAPPED_REF_ALT true                                              # added the option for recovering reference allele (plink might change the REF-ALT order if --keep-allele-order option is not set in every command.)
 
-zcat rejec.vcf.gz| grep -v "#"| cut -f 3 > "$OUT_DIR"/tmp/to-be-flipped.list
 
-plink  \
-    --bfile "$OUT_DIR"/merged-gsa-a2fill-clean \
-    --flip "$OUT_DIR"/tmp/to-be-flipped.list \
-    --make-bed \
-    --out "$OUT_DIR"/merged-gsa-a2fill-clean-flipped
+#zcat reject.vcf.gz| grep -v "#"| cut -f 3 > "$OUT_DIR"/tmp/to-be-flipped.list
+
+#plink  \
+#   --bfile "$OUT_DIR"/merged-gsa-a2fill-clean \
+#   --flip "$OUT_DIR"/tmp/to-be-flipped.list \
+#   --make-bed \
+#   --out "$OUT_DIR"/merged-gsa-a2fill-clean-flipped
+
+#plink \
+#    --bfile "$OUT_DIR"/merged-gsa-a2fill-clean-flipped \
+#    --recode vcf bgz \
+#    --output-chr chr26 \
+#    --out "$OUT_DIR"/all-gsa-clean-flipped
+
+#bcftools view \
+#    -r chr1,chr2,chr3,chr4,chr5,chr6,chr7,chr8,chr9,chr10,chr11,chr12,chr13,chr14,chr15,chr16,chr17,chr18,chr19,chr20,chr21,chr22,chr23 "$OUT_DIR"/all-gsa-clean-flipped/all-gsa-clean-flipped.vcf.gz \
+#    -Oz \
+#    -o "$OUT_DIR"/all-gsa-clean-flipped/all-gsa-chr1-23-flipped.vcf.gz
+
+#picard LiftoverVcf \
+#    I="$OUT_DIR"/all-gsa-clean-flipped/all-gsa-chr1-23-flipped.vcf.gz \
+#    O="$OUT_DIR"/all-gsa-clean-flipped/all-gsa-hg38-flipped.vcf.gz \
+#    CHAIN=../../../reference/hg19ToHg38.over.chain \
+#    REJECT=reject.vcf.gz \
+#    R=../../../reference/hg38.fa
 
 plink \
-    --bfile "$OUT_DIR"/merged-gsa-a2fill-clean-flipped \
-    --recode vcf bgz \
-    --output-chr chr26 \
-    --out "$OUT_DIR"/all-gsa-clean-flipped
-
-bcftools view \
-    -r chr1,chr2,chr3,chr4,chr5,chr6,chr7,chr8,chr9,chr10,chr11,chr12,chr13,chr14,chr15,chr16,chr17,chr18,chr19,chr20,chr21,chr22,chr23 "$OUT_DIR"/all-gsa-clean-flipped/all-gsa-clean-flipped.vcf.gz \
-    -Oz \
-    -o "$OUT_DIR"/all-gsa-clean-flipped/all-gsa-chr1-23-flipped.vcf.gz
-
-picard LiftoverVcf \
-    I="$OUT_DIR"/all-gsa-clean-flipped/all-gsa-chr1-23-flipped.vcf.gz \
-    O="$OUT_DIR"/all-gsa-clean-flipped/all-gsa-hg38-flipped.vcf.gz \
-    CHAIN=../../../reference/hg19ToHg38.over.chain \
-    REJECT=rejec.vcf.gz \
-    R=../../../reference/hg38.fa
-
-plink \
-    --vcf ./gsa/merge-plinks-gsa/newIDs/all-gsa-hg38-flipped-newID.vcf.gz \
+    --vcf ./gsa/merge-plinks-gsa/newIDs/all-gsa-hg38.vcf.gz \
     --const-fid \
     --allow-extra-chr \
     --make-bed \
     --out "$OUT_DIR"/duplicates-gsa-sequencing-gsa-hg38-lifted
+    --keep-allele-order
 
 # merging gsa and sequencing to perform king analysis
 plink \
@@ -184,12 +204,14 @@ plink \
     --extract "$OUT_DIR"/all-niddk-wes-wgs.bim  \
     --allow-extra-chr \
     --make-bed –out tmp1
+    --keep-allele-order
 
 plink \
     --bfile "$OUT_DIR"/all-niddk-wes-wgs \
     --extract gsa-hg38-lifted.bim  \
     --allow-extra-chr \
     --make-bed –out tmp2
+    --keep-allele-order
 
 plink \
     --bfile tmp1 \

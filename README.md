@@ -2,12 +2,16 @@
 
 ## Dependencies
 - Package management is handled by [conda](https://docs.conda.io/en/latest/miniconda.html).
-- Tools installed during setup
+- Tools installed during first run
     - `bcftools`
     - `picard`
     - `plink`
     - `plink2`
     - `king`
+    - `snpflip` (https://github.com/biocore-ntnu/snpflip)
+- snpflip is used for alignment to positive strand
+    - requires .bim file for each dataset and .fasta file for reference genome matching each input file
+
 
 ## Setup
 

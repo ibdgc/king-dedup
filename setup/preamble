@@ -30,12 +30,13 @@ fi
 # Check if king-dedup environment exists. If not, create it and install tools.
 if ! conda env list | grep -q "king-dedup"
 then
-    conda create --name king-dedup -y
+    conda create --name king-dedup python==2.7.18 -y
     conda activate king-dedup
     for i in "${TOOLS[@]}"
     do
         conda install -y "$i"
     done
+    pip install snpflip
     conda deactivate
 fi
 
