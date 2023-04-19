@@ -21,6 +21,57 @@ done < "$INPUT"
 # do
 #   echo "Pair $i: ${FILES[$i]} and ${REFERENCE[$i]}"
 # done
+#
+
+## ROUTINE ORDER
+#
+# lift over
+# bcftools norm
+# bcftools annotate
+# bcftools view
+#
+# merge-list
+#
+# bcftools merge
+# convert to plink
+# convert gsa files to plink
+# remove ambiguous snps and flip +
+# unifying variant ID
+#
+# generate update.ids
+# merging gsa as merge.list
+#
+# plink merge-gsa
+# plink fill-missing-a2
+# removing malformed variants
+# plink exclude a2fill-clean
+# plink recode vcf bgz
+# plink convert to plink
+# plink merge gsa and seq
+# plink extract
+# plink gen merged
+# king
+
+
+
+
+
+picard \
+    -LiftoverVcf \
+    I="$OUT_DIR"/all-gsa-chr1-23.vcf.gz \
+    O="$OUT_DIR"/all-gsa-hg38.vcf.gz \
+    CHAIN=../../../reference/hg19ToHg38.over.chain \
+    REJECT=reject.vcf.gz \
+    R=../../../reference/hg38.fa                                              # first round liftover to get rejected site due to strands flipped ## why there are still strand flips, they should have been corrected in lines #73-79 
+    RECOVER_SWAPPED_REF_ALT true                                              # added the option for recovering reference allele (plink might change the REF-ALT order if --keep-allele-order option is not set in every command.)
+
+# TODO which file formats do we need to account for as inputs
+# .ped
+# .vcf
+# .bed
+# .bim
+# .fam
+# .pvar
 
 j=0
 
@@ -34,12 +85,12 @@ do
         -o "$OUT_DIR"/tmp/tmp1.vcf.gz
 
     # unifying variant IDs
-    bcftools annotate \
-        -x ID \
-        -I +'%CHROM:%POS:%REF:%ALT' "$OUT_DIR"/tmp/tmp1.vcf.gz \
-        --threads 10 \
-        -Oz \
-        -o "$OUT_DIR"/tmp/tmp2.vcf.gz
+    # bcftools annotate \
+    #     -x ID \
+    #     -I +'%CHROM:%POS:%REF:%ALT' "$OUT_DIR"/tmp/tmp1.vcf.gz \
+    #     --threads 10 \
+    #     -Oz \
+    #     -o "$OUT_DIR"/tmp/tmp2.vcf.gz
 
     # getting PASS variants for vcf
     bcftools view \
@@ -153,15 +204,6 @@ plink \
  #   -r chr1,chr2,chr3,chr4,chr5,chr6,chr7,chr8,chr9,chr10,chr11,chr12,chr13,chr14,chr15,chr16,chr17,chr18,chr19,chr20,chr21,chr22,chr23 "$OUT_DIR"/all-gsa-clean/all-gsa-clean.vcf.gz \
  #   -Oz \
  #   -o "$OUT_DIR"/all-gsa-chr1-23.vcf.gz
-
-picard \
-    -LiftoverVcf \
-    I="$OUT_DIR"/all-gsa-chr1-23.vcf.gz \
-    O="$OUT_DIR"/all-gsa-hg38.vcf.gz \
-    CHAIN=../../../reference/hg19ToHg38.over.chain \
-    REJECT=reject.vcf.gz \
-    R=../../../reference/hg38.fa                                              # first round liftover to get rejected site due to strands flipped ## why there are still strand flips, they should have been corrected in lines #73-79 
-    RECOVER_SWAPPED_REF_ALT true                                              # added the option for recovering reference allele (plink might change the REF-ALT order if --keep-allele-order option is not set in every command.)
 
 
 #zcat reject.vcf.gz| grep -v "#"| cut -f 3 > "$OUT_DIR"/tmp/to-be-flipped.list
