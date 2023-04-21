@@ -40,3 +40,14 @@ then
     conda deactivate
 fi
 
+# Pull down liftover files
+wget \
+    https://hgdownload.soe.ucsc.edu/goldenPath/hg19/liftOver/hg19ToHg38.over.chain.gz \
+    -O $OUT_DIR/tmp/hg19ToHg38.over.chain.gz
+
+wget \
+    https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz \
+    -O $OUT_DIR/tmp/hg38.fa.gz 
+
+gzip -d $OUT_DIR/tmp/*.gz
+
