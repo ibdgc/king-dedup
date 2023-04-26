@@ -57,14 +57,22 @@ picard \
     RECOVER_SWAPPED_REF_ALT true                                              # added the option for recovering reference allele (plink might change the REF-ALT order if --keep-allele-order option is not set in every command.)
 
 # TODO which file formats do we need to account for as inputs
-# .ped
 # .vcf
 # .bed
 # .bim
 # .fam
-# .pvar
 
 j=0
+
+
+# genotyping
+# - bedbim > check ref > snpflip (ref genome specific) > if hg19 > convert vcf > liftover > convert plink > ready to merge
+# - vcf > convert plink > check ref > snpflip (ref genome specific) > if hg19 > convert vcf > liftover > convert plink > ready to merge
+#
+# sequencing - assuming hg38
+# - vcf > convert plink > snpflip > ready to merge
+
+# TODO add keep-allele-order arg for each plink run
 
 for i in "${FILES[@]}"
 do
