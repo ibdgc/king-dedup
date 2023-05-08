@@ -30,6 +30,10 @@ fi
 # Check if king-dedup environment exists. If not, create it and install tools.
 if ! conda env list | grep -q "king-dedup"
 then
+    conda config --add channels defaults
+    conda config --add channels bioconda
+    conda config --add channels conda-forge
+    conda config --set channel_priority strict
     conda create --name king-dedup python==2.7.18 -y
     conda activate king-dedup
     for i in "${TOOLS[@]}"
